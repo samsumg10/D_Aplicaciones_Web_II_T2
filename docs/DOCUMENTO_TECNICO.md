@@ -261,7 +261,7 @@ flowchart TB
     gw["Spring Cloud Gateway :8080"]
     eureka["Eureka Discovery :8761"]
 
-    subgraph negocio["Microservicios de negocio — WebFlux + R2DBC"]
+    subgraph negocio["Microservicios de negocio"]
         pac["pacientes"]
         cit["citas"]
         ate["atenciones"]
@@ -303,7 +303,6 @@ flowchart TB
 sequenceDiagram
     autonumber
     actor A as Admisión
-    participant GW as Gateway
     participant P as pacientes
     participant C as citas
     participant R as RabbitMQ
@@ -311,39 +310,36 @@ sequenceDiagram
     participant AU as auditoria
     participant AT as atenciones
 
-    A->>GW: POST /api/pacientes
-    GW->>P: (lb://pacientes)
-    P-->>A: 201 paciente ACTIVO
+    Note over A,AT: Todas las peticiones de Admisión pasan por el Gateway (lb://servicio)
+    A->>P: POST /api/pacientes
+    P-->>A: 201 ACTIVO
     P--)R: paciente.registrado
     R--)AU: registra traza
 
-    A->>GW: POST /api/citas
-    GW->>C: (lb://citas)
-    C->>P: GET /api/pacientes/{id} (WebClient + Eureka)
+    A->>C: POST /api/citas
+    C->>P: GET /api/pacientes/{id}
     P-->>C: 200 ACTIVO
-    C-->>A: 201 cita PENDIENTE
+    C-->>A: 201 PENDIENTE
     C--)R: cita.registrada
 
-    A->>GW: PATCH /api/citas/{id}/estado CONFIRMADA
-    GW->>C: (lb://citas)
+    A->>C: PATCH estado CONFIRMADA
     C-->>A: 200 CONFIRMADA
-    C--)R: cita.confirmada (CitaConfirmada)
-    par consumidores independientes
-        R--)N: notificaciones.eventos
-        N->>N: guarda aviso simulado + SSE
+    C--)R: cita.confirmada
+    par en paralelo
+        R--)N: cita.confirmada
+        N->>N: guarda aviso
     and
-        R--)AU: auditoria.eventos
-        AU->>AU: guarda PENDIENTE -> CONFIRMADA
+        R--)AU: cita.confirmada
+        AU->>AU: guarda traza
     end
 
-    A->>GW: POST /api/atenciones {citaId}
-    GW->>AT: (lb://atenciones)
+    A->>AT: POST /api/atenciones
     AT->>C: GET /api/citas/{id}
     C-->>AT: CONFIRMADA
     AT->>AT: guarda atención
-    AT->>C: PATCH /api/citas/{id}/estado ATENDIDA
+    AT->>C: PATCH estado ATENDIDA
     C-->>AT: 200
-    AT-->>A: 201 atención REGISTRADA
+    AT-->>A: 201 REGISTRADA
 ```
 
 ### 4.3 Comportamiento ante un servicio caído
@@ -669,17 +665,16 @@ permitidas. Un cambio no permitido responde 409.
 
 ```mermaid
 stateDiagram-v2
-    direction LR
-    state "Cita (RN-06)" as Cita {
-        [*] --> PENDIENTE
-        PENDIENTE --> CONFIRMADA
-        PENDIENTE --> CANCELADA
-        CONFIRMADA --> ATENDIDA: atención registrada
-        CONFIRMADA --> CANCELADA
-        CONFIRMADA --> AUSENTE
-        PENDIENTE --> PENDIENTE: reprogramar
-        CONFIRMADA --> PENDIENTE: reprogramar
-    }
+    [*] --> PENDIENTE
+    PENDIENTE --> CONFIRMADA: confirmar
+    PENDIENTE --> CANCELADA: cancelar
+    CONFIRMADA --> ATENDIDA: atención registrada
+    CONFIRMADA --> CANCELADA: cancelar
+    CONFIRMADA --> AUSENTE: no asistió
+    CONFIRMADA --> PENDIENTE: reprogramar
+    ATENDIDA --> [*]
+    CANCELADA --> [*]
+    AUSENTE --> [*]
 ```
 
 | Proceso | Estados y transiciones |
