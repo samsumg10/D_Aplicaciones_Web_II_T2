@@ -1,0 +1,46 @@
+# Infraestructura local del Hospital Vida Salud: PostgreSQL y RabbitMQ.
+# Los microservicios se ejecutan desde Eclipse o con mvnw (ver README.md).
+# Las credenciales se leen del archivo .env (copie .env.example como .env antes de iniciar).
+#
+#   docker compose up -d      inicia los contenedores
+#   docker compose ps         muestra su estado
+#   docker compose down       los detiene (los datos se conservan en el volumen)
+#   docker compose down -v    los detiene y borra los datos
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: hospital-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:?Defina DB_USER en el archivo .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD en el archivo .env}
+      POSTGRES_DB: hospital
+    ports:
+      - "${DB_PORT:-5433}:5432"
+    volumes:
+      # Crea una base por microservicio la primera vez que se inicia el contenedor
+      - ./infra/postgres/init-databases.sql:/docker-entrypoint-initdb.d/01-init-databases.sql:ro
+      - hospital-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d hospital"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: hospital-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?Defina RABBITMQ_USER en el archivo .env}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Defina RABBITMQ_PASSWORD en el archivo .env}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  hospital-pgdata:

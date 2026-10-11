@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  POM agregador del Hospital Vida Salud. No define dependencias: solo agrupa los módulos para compilarlos
+  y probarlos con un único comando desde la raíz:
+
+      ./mvnw verify        (Linux / macOS / Git Bash)
+      mvnw.cmd verify      (Windows)
+
+  Cada microservicio sigue siendo un proyecto Spring Boot independiente (su propio pom, su propio mvnw)
+  y puede compilarse, probarse y ejecutarse por separado.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.example</groupId>
+	<artifactId>hospital-vida-salud</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
+	<name>hospital-vida-salud</name>
+	<description>Hospital Vida Salud - arquitectura de microservicios (agregador)</description>
+
+	<modules>
+		<!-- Infraestructura -->
+		<module>eureka_server</module>
+		<module>api_gateway</module>
+		<!-- Servicios de negocio -->
+		<module>pacientes</module>
+		<module>citas</module>
+		<module>atenciones</module>
+		<module>laboratorio</module>
+		<module>hospitalizacion</module>
+		<module>farmacia</module>
+		<module>facturacion_pagos</module>
+		<!-- Consumidores de eventos -->
+		<module>notificaciones</module>
+		<module>auditoria</module>
+	</modules>
+</project>

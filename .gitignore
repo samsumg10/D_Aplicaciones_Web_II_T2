@@ -1,5 +1,34 @@
+### Eclipse (workspace) ###
 .metadata/
-target/
 bin/
 .settings/
+.classpath
+.project
+.factorypath
+.apt_generated
+.springBeans
+.sts4-cache
+
+### Maven ###
+target/
+.mvn/wrapper/maven-wrapper.jar
+
+### IntelliJ IDEA / VS Code ###
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+
+### Secretos: nunca se versionan (ver .env.example) ###
+.env
+*.env
+!.env.example
+
+### Logs y temporales ###
 *.log
+HELP.md
+~$*
+~WRD*.tmp
+.DS_Store
+Thumbs.db
